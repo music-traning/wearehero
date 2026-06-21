@@ -1,0 +1,21 @@
+{
+  "name": "WE ARE HERO",
+  "short_name": "HERO",
+  "description": "心理的資本に基づくステータス診断",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#000000",
+  "theme_color": "#0f0f0f",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
