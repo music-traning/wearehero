@@ -176,7 +176,8 @@
             <strong id="ui-affinity"></strong>
             <div id="affinity-list" style="margin-top: 15px; font-size: 12px;"></div>
         </div>
-        <button class="btn" onclick="goHome()" style="margin-top: 30px;" id="btn-home">ホームに戻る</button>
+        <button class="btn" onclick="shareOnX()" style="margin-top: 30px; background-color: #fff; color: #000; font-weight: bold;" id="btn-share-x">𝕏 で結果をシェア</button>
+        <button class="btn" onclick="goHome()" style="margin-top: 10px;" id="btn-home">ホームに戻る</button>
     </div>
 
     <div id="screen-help" class="hidden">
@@ -193,6 +194,7 @@
 </div>
 
 <script>
+  
     // =========================================================================
     // ここに Step 1 の完全なJSONデータをペーストして上書きしてください。
     // （※以下はテスト動作確認用の仮データです。必ず差し替えてください）
@@ -434,6 +436,7 @@
     // =========================================================================
 
     let currentLang = 'ja', currentQuestions = [], currentIdx = 0, answers = {}, currentTier = 1;
+    let shareText = "";
 
     document.getElementById('lang-toggle').addEventListener('click', () => {
         currentLang = currentLang === 'ja' ? 'en' : 'ja';
@@ -457,6 +460,8 @@
         populateAffinityDropdowns();
         document.getElementById('quick-affinity-result').classList.add('hidden');
         loadHistory();
+
+        if(document.getElementById('btn-share-x')) document.getElementById('btn-share-x').innerText = currentLang === 'ja' ? "𝕏 で結果をシェア" : "Share result on 𝕏";
     }
 
     function populateAffinityDropdowns() {
@@ -529,6 +534,12 @@
         document.getElementById('result-profile').innerText = data.profile[currentLang]; document.getElementById('result-action').innerText = data.action_plan[currentLang];
         document.getElementById('ui-action-plan').innerText = currentLang === 'ja' ? "【行動指針】" : "[ Action Plan ]";
         document.getElementById('ui-affinity').innerText = currentLang === 'ja' ? "【全16タイプ 相性マトリックス】" : "[ 16-Type Affinity Matrix ]";
+        
+        const titleStr = data.title[currentLang];
+        shareText = currentLang === 'ja' 
+            ? `私のステータスは [ ${typeKey} ] ${titleStr} でした！\n\n`
+            : `My HERO status is [ ${typeKey} ] ${titleStr}!\n\n`;
+        
         document.getElementById('screen-result').classList.remove('hidden');
 
         const imgContainer = document.querySelector('#screen-result div[style*="text-align: center"]');
@@ -589,6 +600,15 @@
 
     function clearHistory() { if(confirm(currentLang === 'ja' ? '本当に履歴を削除しますか？' : 'Are you sure to clear history?')) { localStorage.removeItem('hero_history'); loadHistory(); } }
 
+    // ▼ 𝕏でシェアする関数 ▼
+    function shareOnX() {
+        const url = "https://wearehero.vercel.app/";
+        const hashtags = "WEAREHERO,心理的資本";
+        const text = encodeURIComponent(shareText); // URLに入れられるように文字を変換
+        const intentUrl = `https://twitter.com/intent/tweet?text=${text}&url=${encodeURIComponent(url)}&hashtags=${hashtags}`;
+        window.open(intentUrl, '_blank', 'noopener,noreferrer');
+    }
+    
     renderHomeUI();
 
     if ('serviceWorker' in navigator) { window.addEventListener('load', () => { navigator.serviceWorker.register('./service-worker.js').catch(err => console.log('SW error: ', err)); }); }
