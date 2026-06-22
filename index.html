@@ -5,6 +5,22 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>WE ARE HERO</title>
 
+    <!-- ここから追加：OGP (Open Graph Protocol) 設定 -->
+    <meta property="og:title" content="WE ARE HERO | 心理的資本ステータス診断">
+    <meta property="og:description" content="あなたはどのタイプ？ 心理的資本（HERO）に基づくレジリエンス・ステータス診断。全16クラスからあなたの「強さ」を判定します。">
+    <meta property="og:url" content="https://wearehero.vercel.app/">
+    <meta property="og:image" content="https://wearehero.vercel.app/og-image.png">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="WE ARE HERO">
+
+    <!-- ここから追加：X (Twitter) Card 設定 -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="WE ARE HERO | 心理的資本ステータス診断">
+    <meta name="twitter:description" content="あなたはどのタイプ？ 心理的資本（HERO）に基づくレジリエンス・ステータス診断。全16クラスからあなたの「強さ」を判定します。">
+    <meta name="twitter:image" content="https://wearehero.vercel.app/og-image.png">
+    <meta name="twitter:domain" content="wearehero.vercel.app">
+    <!-- ここまで追加 -->
+
     <script defer src="/_vercel/insights/script.js"></script>
     
     <link rel="manifest" href="manifest.json">
@@ -84,12 +100,10 @@
         .affinity-score-box { text-align: right; }
         .affinity-relation { font-size: 10px; color: var(--accent-color); display: block; }
         
-        /* 最重要：これを消すとUIが全崩壊します */
         .hidden { display: none !important; }
         
         .header-controls { display: flex; justify-content: space-between; margin-bottom: 20px; gap: 10px; }
 
-        /* フッターのスタイル */
         footer {
             text-align: center;
             margin-top: 40px;
@@ -136,6 +150,7 @@
                     <strong id="quick-result-relation" style="color: var(--accent-color); font-size: 18px;"></strong>
                     <span id="quick-result-score" style="font-size: 24px; font-weight: bold;"></span>
                 </div>
+                <p id="quick-result-desc" style="font-size: 13px; line-height: 1.5; color: #ccc; margin-top: 10px; padding-top: 10px; border-top: 1px dashed #333;"></p>
             </div>
         </div>
 
@@ -147,7 +162,10 @@
     </div>
 
     <div id="screen-quiz" class="hidden">
-        <h3 id="quiz-progress"></h3>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+            <h3 id="quiz-progress" style="margin: 0;"></h3>
+            <button onclick="abortQuiz()" style="background: none; border: 1px solid #555; color: #aaa; padding: 2px 8px; cursor: pointer; font-family: inherit; font-size: 12px;">[ 終了 ]</button>
+        </div>
         <div class="question-card" id="question-text"></div>
         <div class="options" id="quiz-options"></div>
         <div style="display:flex; gap:10px; margin-top:20px;">
@@ -193,425 +211,419 @@
 
 </div>
 
+<script src="./data.js"></script>
+
 <script>
-  
-    // =========================================================================
-    // ここに Step 1 の完全なJSONデータをペーストして上書きしてください。
-    // （※以下はテスト動作確認用の仮データです。必ず差し替えてください）
-    // =========================================================================
-    const heroData = {
-  "app_config": {
-    "title": {
-      "ja": "WE ARE HERO",
-      "en": "WE ARE HERO"
-    },
-    "description": {
-      "ja": "心理的資本（HERO）に基づくレジリエンス・ステータス診断",
-      "en": "Resilience Status Assessment based on Psychological Capital (HERO)"
-    },
-    "scale": [
-      { "value": 1, "label": { "ja": "全く当てはまらない", "en": "Strongly Disagree" } },
-      { "value": 2, "label": { "ja": "あまり当てはまらない", "en": "Disagree" } },
-      { "value": 3, "label": { "ja": "どちらともいえない", "en": "Neutral" } },
-      { "value": 4, "label": { "ja": "やや当てはまる", "en": "Agree" } },
-      { "value": 5, "label": { "ja": "非常に当てはまる", "en": "Strongly Agree" } }
-    ]
-  },
-  "questions": [
-    
-    { "id": "q01", "category": "H", "tier": 1, "is_reversed": false, "text": { "ja": "目標への道が絶たれても、即座に「プランB」の構築に取り掛かることができる。", "en": "Even if the path to my goal is cut off, I can immediately start building 'Plan B'." } },
-    { "id": "q02", "category": "H", "tier": 1, "is_reversed": true, "text": { "ja": "現在のプロジェクトにおいて、自分がどこに向かっているのか分からなくなることが多い。", "en": "In my current projects, I often lose sight of where I am heading." } },
-    { "id": "q03", "category": "H", "tier": 1, "is_reversed": false, "text": { "ja": "ゴールが遠くても、今この瞬間の泥臭い作業がそこへ繋がっていると実感できる。", "en": "Even if the goal is distant, I feel that my current gritty tasks are connected to it." } },
-    { "id": "q04", "category": "E", "tier": 1, "is_reversed": false, "text": { "ja": "未経験のタスクを任されても、「最終的には自分がなんとかする」という確信がある。", "en": "When assigned an unexperienced task, I am confident that 'I will manage it in the end'." } },
-    { "id": "q05", "category": "E", "tier": 1, "is_reversed": true, "text": { "ja": "自分の能力を超える課題に直面すると、立ちすくんでしまう。", "en": "I freeze when faced with challenges that exceed my capabilities." } },
-    { "id": "q06", "category": "E", "tier": 1, "is_reversed": false, "text": { "ja": "過去の成功体験が、今の新しい挑戦の支えになっている。", "en": "Past successful experiences support my current new challenges." } },
-    { "id": "q07", "category": "R", "tier": 1, "is_reversed": false, "text": { "ja": "理不尽なトラブルで計画が崩壊しても、翌日には平常心のルーティンに戻ることができる。", "en": "Even if unreasonable troubles destroy my plans, I can return to my normal routine the next day." } },
-    { "id": "q08", "category": "R", "tier": 1, "is_reversed": true, "text": { "ja": "一度の大きな失敗を引きずり、数日間パフォーマンスが落ちることがある。", "en": "I sometimes drag out a major failure, causing my performance to drop for days." } },
-    { "id": "q09", "category": "R", "tier": 1, "is_reversed": false, "text": { "ja": "強いストレスを感じた時、それを断ち切るための「自分なりの儀式（行動）」を持っている。", "en": "When feeling extreme stress, I have my own 'ritual' to break it off." } },
-    { "id": "q10", "category": "O", "tier": 1, "is_reversed": false, "text": { "ja": "仕事での失敗は、自分の能力不足というより「一時的な環境や運の要素」が強かったと切り替えられる。", "en": "I can shift my mindset to view work failures as 'temporary environmental or luck factors' rather than a lack of ability." } },
-    { "id": "q11", "category": "O", "tier": 1, "is_reversed": true, "text": { "ja": "ひとつのミスが、今後のキャリアすべてを台無しにするような恐怖を感じる。", "en": "I fear that a single mistake will ruin my entire career." } },
-    { "id": "q12", "category": "O", "tier": 1, "is_reversed": false, "text": { "ja": "今の苦境は長くは続かず、やがて潮目が変わると信じている。", "en": "I believe the current hardship won't last long and the tide will eventually turn." } },
-    
-    { "id": "q13", "category": "H", "tier": 2, "is_reversed": false, "text": { "ja": "複数のアプローチを同時に走らせ、どれかが失敗してもダメージを最小限に抑える準備をしている。", "en": "I run multiple approaches simultaneously to minimize damage if one fails." } },
-    { "id": "q14", "category": "H", "tier": 2, "is_reversed": true, "text": { "ja": "ゴールまでの道筋は一つしかなく、それが塞がれたら終わりだと感じる。", "en": "I feel there is only one path to the goal, and if it's blocked, it's over." } },
-    { "id": "q15", "category": "H", "tier": 2, "is_reversed": false, "text": { "ja": "周囲が諦めるような状況でも、突破口を見つけるための議論を主導できる。", "en": "Even when others give up, I can lead discussions to find a breakthrough." } },
-    { "id": "q16", "category": "H", "tier": 2, "is_reversed": false, "text": { "ja": "目標自体が途中で変わっても、モチベーションを落とさずに再設定できる。", "en": "If the goal itself changes mid-way, I can reset without losing motivation." } },
-    { "id": "q17", "category": "E", "tier": 2, "is_reversed": false, "text": { "ja": "誰もやりたがらない地味な仕事でも、自分がやれば価値を生み出せると思う。", "en": "Even in tedious jobs no one wants, I believe I can create value." } },
-    { "id": "q18", "category": "E", "tier": 2, "is_reversed": true, "text": { "ja": "専門外の話題について意見を求められると、極度に萎縮してしまう。", "en": "I shrink back extremely when asked for opinions outside my expertise." } },
-    { "id": "q19", "category": "E", "tier": 2, "is_reversed": false, "text": { "ja": "周囲の評価がどうであれ、自分の生み出した成果物には絶対の自信を持っている。", "en": "Regardless of others' evaluations, I have absolute confidence in the output I create." } },
-    { "id": "q20", "category": "E", "tier": 2, "is_reversed": false, "text": { "ja": "失敗するかもしれない恐怖よりも、自分の仮説を証明したい欲求が勝る。", "en": "The desire to prove my hypothesis outweighs the fear of potential failure." } },
-    { "id": "q21", "category": "R", "tier": 2, "is_reversed": false, "text": { "ja": "長期にわたる単調で遅効性のタスクを、淡々と継続できる。", "en": "I can stoically continue long-term, monotonous, slow-yielding tasks." } },
-    { "id": "q22", "category": "R", "tier": 2, "is_reversed": true, "text": { "ja": "批判的なフィードバックを受けると、人格まで否定されたように感じてしまう。", "en": "I feel my entire character is denied when I receive critical feedback." } },
-    { "id": "q23", "category": "R", "tier": 2, "is_reversed": false, "text": { "ja": "納得のいかないルールや理不尽な環境下でも、感情を殺して実利を取る立ち回りができる。", "en": "Even under unacceptable rules, I can kill my emotions and maneuver for practical gains." } },
-    { "id": "q24", "category": "R", "tier": 2, "is_reversed": false, "text": { "ja": "燃え尽き症候群の兆候を自分で察知し、意図的に休むことができる。", "en": "I can detect signs of burnout myself and intentionally take a rest." } },
-    { "id": "q25", "category": "O", "tier": 2, "is_reversed": false, "text": { "ja": "自分の努力が評価されなかった時、「相手の見る目がないだけだ」と笑って流すことができる。", "en": "When my efforts go unrewarded, I can laugh it off thinking 'They just lack the eye for it'." } },
-    { "id": "q26", "category": "O", "tier": 2, "is_reversed": true, "text": { "ja": "トラブルが起きた際、解決よりも先に「誰のせいか」を気にしてしまう。", "en": "When trouble occurs, I worry about 'whose fault it is' before finding a solution." } },
-    { "id": "q27", "category": "O", "tier": 2, "is_reversed": false, "text": { "ja": "不確実な要素が多いプロジェクトほど、面白い化学反応が起きるとワクワクする。", "en": "The more uncertain a project is, the more excited I get about interesting chemical reactions." } },
-    { "id": "q28", "category": "O", "tier": 2, "is_reversed": true, "text": { "ja": "悪い予測が当たった時、「やはりダメだったか」と妙に安堵してしまう自分がいる。", "en": "When a bad prediction comes true, a part of me feels oddly relieved thinking 'I knew it wouldn't work'." } },
-    
-    { "id": "q29", "category": "H", "tier": 3, "is_reversed": false, "text": { "ja": "巨大な目標を、今日一日の具体的なスモールタスクにまで分解する解像度を持っている。", "en": "I have the resolution to break down massive goals into concrete small tasks for today." } },
-    { "id": "q30", "category": "H", "tier": 3, "is_reversed": true, "text": { "ja": "他人の成功を見ると、自分の選んだ道が間違っているのではないかと激しく焦る。", "en": "Seeing others' success makes me severely anxious that I chose the wrong path." } },
-    { "id": "q31", "category": "H", "tier": 3, "is_reversed": false, "text": { "ja": "資源が枯渇していても、別のところから引っ張ってくる「悪知恵」が働く。", "en": "Even when resources are depleted, my 'cunning' kicks in to pull them from elsewhere." } },
-    { "id": "q32", "category": "H", "tier": 3, "is_reversed": true, "text": { "ja": "「なぜそれをやるのか」という根本的な意義を見失い、突然手が止まることがある。", "en": "I sometimes suddenly stop working, losing sight of the fundamental 'why' behind it." } },
-    { "id": "q33", "category": "H", "tier": 3, "is_reversed": false, "text": { "ja": "絶対に勝てない戦いであっても、撤退戦を指揮して被害を最小化する戦略を描ける。", "en": "Even in an unwinnable battle, I can draw a strategy to lead a retreat and minimize damage." } },
-    { "id": "q34", "category": "E", "tier": 3, "is_reversed": true, "text": { "ja": "自分の代わりはいくらでもいると、心の底で冷めている。", "en": "Deep down, I am coldly aware that I am completely replaceable." } },
-    { "id": "q35", "category": "E", "tier": 3, "is_reversed": false, "text": { "ja": "ツールや環境が劣悪でも、自分の腕前だけで一定のクオリティを叩き出せる。", "en": "Even with poor tools or environments, I can deliver a certain quality using just my skills." } },
-    { "id": "q36", "category": "E", "tier": 3, "is_reversed": true, "text": { "ja": "自分より圧倒的に優秀な人間を前にすると、戦う前から諦めてしまう。", "en": "Faced with an overwhelmingly superior person, I give up before the fight starts." } },
-    { "id": "q37", "category": "E", "tier": 3, "is_reversed": false, "text": { "ja": "権威ある人間の意見でも、論理がおかしければ臆せず反論できる。", "en": "Even against authority, I can fearlessly object if their logic is flawed." } },
-    { "id": "q38", "category": "E", "tier": 3, "is_reversed": false, "text": { "ja": "自分の価値は「何ができるか」ではなく、「何を成し遂げたか」でのみ証明されると思う。", "en": "I believe my value is proven only by 'what I have accomplished', not 'what I can do'." } },
-    { "id": "q39", "category": "R", "tier": 3, "is_reversed": false, "text": { "ja": "毎日の生活において、感情の起伏とは無関係に「絶対にやる」と決めている習慣がある。", "en": "In my daily life, I have a habit I 'absolutely do' regardless of my emotional ups and downs." } },
-    { "id": "q40", "category": "R", "tier": 3, "is_reversed": true, "text": { "ja": "予期せぬトラブルが起きた時、心臓の鼓動が早くなり、冷静な判断ができなくなる。", "en": "When unexpected trouble occurs, my heart races and I lose calm judgment." } },
-    { "id": "q41", "category": "R", "tier": 3, "is_reversed": true, "text": { "ja": "過去の失敗の記憶が突然フラッシュバックして、身動きがとれなくなることがある。", "en": "Memories of past failures sometimes suddenly flash back, paralyzing me." } },
-    { "id": "q42", "category": "R", "tier": 3, "is_reversed": false, "text": { "ja": "どん底の状態にあっても、「この状況をどうやってネタにしてやろうか」と考える自分がいる。", "en": "Even at rock bottom, a part of me thinks 'how can I turn this situation into a good story?'" } },
-    { "id": "q43", "category": "R", "tier": 3, "is_reversed": true, "text": { "ja": "他者のミスで自分のペースが乱された時、激しい怒りが湧き、平常心に戻るのに時間がかかる。", "en": "When others' mistakes disrupt my pace, intense anger wells up, taking time to calm down." } },
-    { "id": "q44", "category": "O", "tier": 3, "is_reversed": false, "text": { "ja": "チームの空気が最悪な時、あえて道化を演じてでも空気を変えようと動くことができる。", "en": "When team morale is at its worst, I can play the fool just to change the atmosphere." } },
-    { "id": "q45", "category": "O", "tier": 3, "is_reversed": true, "text": { "ja": "完璧な準備ができないなら、最初からやらない方がマシだと考える。", "en": "If I can't prepare perfectly, I'd rather not do it at all." } },
-    { "id": "q46", "category": "O", "tier": 3, "is_reversed": false, "text": { "ja": "何事も「なんとかなる」ではなく、「自分がなんとかするから大丈夫だ」という能動的な楽観を持っている。", "en": "I hold an active optimism not of 'it will work out', but 'it will be fine because I will make it work'." } },
-    { "id": "q47", "category": "O", "tier": 3, "is_reversed": true, "text": { "ja": "成功した時でさえ、「次は失敗するかもしれない」という不安が常に消えない。", "en": "Even when successful, the anxiety that 'I might fail next time' never disappears." } },
-    { "id": "q48", "category": "O", "tier": 3, "is_reversed": false, "text": { "ja": "世界や社会は基本的に不条理であり、だからこそ自分が面白いと思うことだけをやるべきだと思う。", "en": "The world is fundamentally absurd, which is exactly why I should only do what I find interesting." } }
-  ],
-  "types": {
-    "HHHH": {
-      "title": { "ja": "不動の修験者", "en": "The Immovable Ascetic" },
-      "profile": { "ja": "すべてのパラメータが極まった鋼の精神。外部環境のノイズに一切動じず、ただ淡々と自らのルーティンと目標を完遂する。その姿は周囲に畏怖すら与えるが、時に他者の「弱さ」への共感を欠くリスクを孕む。", "en": "A spirit of steel with maxed parameters. Unfazed by external noise, you stoically complete your routines and goals. While awe-inspiring, you risk lacking empathy for others' 'weaknesses'." },
-      "action_plan": { "ja": "現在のストイックな習慣を維持せよ。ただし、チーム戦においては自身の基準を他者に求めず、「翻訳者」としての立ち回りを意識せよ。", "en": "Maintain your stoic habits. However, in team battles, do not force your standards on others; act as a 'translator'." },
-      "affinity": {
-        "best_partner": "LLLL",
-        "partner_title": { "ja": "絶望の淵の監視者", "en": "Watcher of the Abyss" },
-        "reason": { "ja": "あなたが真っ直ぐに進む陰で、彼らが最悪のリスクを検知し警鐘を鳴らす。完全なる光と影の補完関係。", "en": "While you charge straight ahead, they detect the worst risks in the shadows. A perfect balance of light and dark." }
-      }
-    },
-    "HHHL": {
-      "title": { "ja": "漆黒の戦術家", "en": "The Obsidian Tactician" },
-      "profile": { "ja": "能力と目標は最高だが、常に「最悪」を想定する。失敗を絶対に許さない冷徹な司令塔。楽観性を持たないからこそ、その計画には一切の隙がない。", "en": "High capability and goals, but always assuming the worst. A cold-blooded commander who never allows failure. Your lack of optimism leaves no flaws in your plans." },
-      "action_plan": { "ja": "完璧主義は武器だが、周囲の精神を削る。意図的に「余白」や「遊び」をシステムに組み込む度量を持て。", "en": "Perfectionism is your weapon, but it drains others. Build intentional 'margins' and 'play' into your systems." },
-      "affinity": {
-        "best_partner": "LLLH",
-        "partner_title": { "ja": "陽だまりの隠者", "en": "The Sunlit Hermit" },
-        "reason": { "ja": "あなたの冷酷なまでの論理の緊張感を、彼らの無根拠なポジティブさが和らげ、チーム崩壊を防ぐ。", "en": "Their groundless positivity softens your ruthless logical tension, preventing team collapse." }
-      }
-    },
-    "HHLH": {
-      "title": { "ja": "ガラスの英雄", "en": "The Fragile Hero" },
-      "profile": { "ja": "自信も希望も満ち溢れるが、一度の大きな挫折で心が砕ける（Rが低い）。晴天の日に最も輝く、もろく美しいエースアタッカー。", "en": "Brimming with confidence and hope, but easily shattered by a major setback. A fragile, beautiful ace who shines brightest on sunny days." },
-      "action_plan": { "ja": "致命傷を避けるため、退却ラインを事前に引け。折れない心を作るより、折れた後の復帰マニュアルを整備せよ。", "en": "Draw retreat lines to avoid fatal wounds. Instead of building an unbreakable heart, write a recovery manual for when you break." },
-      "affinity": {
-        "best_partner": "LLHL",
-        "partner_title": { "ja": "忘却の重装兵", "en": "The Oblivion Vanguard" },
-        "reason": { "ja": "あなたが折れた時、彼らが無感情に前線を維持し、あなたが再起するまでの時間を稼いでくれる。", "en": "When you break, they emotionlessly hold the frontline, buying time for your recovery." }
-      }
-    },
-    "HHLL": {
-      "title": { "ja": "薄氷の設計者", "en": "The Thin-Ice Architect" },
-      "profile": { "ja": "高い能力で完璧な計画を立てるが、想定外の事態に極端に弱い。氷の上を歩くように、計算通りにしか進めない天才。", "en": "Builds perfect plans with high capability but is extremely vulnerable to the unexpected. A genius who can only proceed as calculated, like walking on thin ice." },
-      "action_plan": { "ja": "「失敗＝ゲームオーバー」という二元論を捨てよ。計画の初期段階から障害を論理的に組み込むこと。", "en": "Discard the binary of 'failure = game over'. Logically build obstacles into the initial stages of your plans." },
-      "affinity": {
-        "best_partner": "LLHH",
-        "partner_title": { "ja": "泥濘の生存者", "en": "Survivor in the Mud" },
-        "reason": { "ja": "あなたの完璧な設計図が現場で崩壊した時、泥水にまみれても笑いながらそれを修正してくれる最強の実働部隊。", "en": "When your perfect blueprints collapse, they are the ultimate task force to fix it laughing in the mud." }
-      }
-    },
-    "HLHH": {
-      "title": { "ja": "傷だらけの志士", "en": "The Scarred Patriot" },
-      "profile": { "ja": "自分の能力に自信はないが、何度倒れても立ち上がり前を向く。最も泥臭く、結果的に周囲から最も応援される主人公。", "en": "Lacks confidence in their abilities, but gets up and faces forward no matter how many times they fall. The grittiest hero, ultimately cheering the loudest." },
-      "action_plan": { "ja": "自己評価の低さを恐れるな。あなたの最大の武器は「打たれ強さ」。そのまま打席に立ち続けよ。", "en": "Don't fear your low self-esteem. Your greatest weapon is 'toughness'. Keep stepping up to the plate." },
-      "affinity": {
-        "best_partner": "LHLL",
-        "partner_title": { "ja": "孤高の狙撃手", "en": "The Lone Sniper" },
-        "reason": { "ja": "あなたが泥臭くヘイト（標的）を集めている間に、彼らが確かな腕で致命傷を与えてくれる。", "en": "While you grittily draw aggro, they deal the fatal blow with reliable skill." }
-      }
-    },
-    "HLHL": {
-      "title": { "ja": "孤独な求道者", "en": "The Solitary Seeker" },
-      "profile": { "ja": "自信も楽観性もない。ただ「目標への執念」と「再起力」だけで地を這い進む修羅。苦痛を燃料にして進むことができる。", "en": "No confidence or optimism. A demon crawling forward purely on 'obsession with the goal' and 'resilience'. Uses pain as fuel." },
-      "action_plan": { "ja": "過労死ラインを見極めろ。あなたのシステムは頑丈だが、突然限界を迎える。外部の客観的データを信じよ。", "en": "Identify your breaking point. Your system is sturdy but fails abruptly. Trust objective external data." },
-      "affinity": {
-        "best_partner": "LHLH",
-        "partner_title": { "ja": "享楽の奇術師", "en": "The Hedonistic Illusionist" },
-        "reason": { "ja": "あなたの重苦しい執念に、彼らが遊び心とノリをもたらし、思いもよらぬ近道を発見させる。", "en": "They bring playfulness to your heavy obsession, discovering unexpected shortcuts." }
-      }
-    },
-    "HLLH": {
-      "title": { "ja": "空想の観測手", "en": "The Daydreaming Observer" },
-      "profile": { "ja": "実力やタフネスはないが、常に明るい未来だけを信じて突き進むアイデアマン。チームの「発射台」として機能する。", "en": "Lacks skill and toughness but pushes forward believing only in a bright future. Acts as the team's 'launchpad'." },
-      "action_plan": { "ja": "アイデアを出すだけで終わるな。自分の構想を形にしてくれる「実行部隊」を必ず見つけ出せ。", "en": "Don't just spit ideas. You must find the 'execution squad' to materialize your concepts." },
-      "affinity": {
-        "best_partner": "LHHL",
-        "partner_title": { "ja": "虚無の執行人", "en": "The Void Executioner" },
-        "reason": { "ja": "あなたの突飛なアイデアを、彼らが一切の感情を交えずに正確にコードやシステムへと変換する。", "en": "They translate your wild ideas into precise code and systems without a trace of emotion." }
-      }
-    },
-    "HLLL": {
-      "title": { "ja": "呪縛の預言者", "en": "The Bound Prophet" },
-      "profile": { "ja": "全てに絶望し、自信もない。しかし「目標」だけは捨てきれず、苦悩しながら歩き続ける悲劇の主人公。", "en": "Despairs at everything and lacks confidence. Yet, unable to abandon the 'goal', a tragic hero walking in agony." },
-      "action_plan": { "ja": "まずは目標のハードルを極限まで下げよ。絶望の中でも継続できる最小のルーティンを設計しろ。", "en": "Lower the bar of your goals to the absolute minimum. Design the smallest routine sustainable even in despair." },
-      "affinity": {
-        "best_partner": "LHHH",
-        "partner_title": { "ja": "刹那の狂戦士", "en": "The Ephemeral Berserker" },
-        "reason": { "ja": "あなたが苦悩して進めない壁を、彼らが何も考えずに物理で粉砕してくれる。", "en": "The walls you agonizingly stare at, they physically smash without a second thought." }
-      }
-    },
-    "LHHH": {
-      "title": { "ja": "刹那の狂戦士", "en": "The Ephemeral Berserker" },
-      "profile": { "ja": "先のビジョンはないが、圧倒的な自信とタフネスで目の前の壁を粉砕し続ける。現在のみを生きる最強の突撃隊長。", "en": "No future vision, but crushes walls ahead with overwhelming confidence and toughness. The ultimate shock trooper living only in the present." },
-      "action_plan": { "ja": "「どこに向かっているか」は他人に委ねろ。あなたは目の前のタスクを最速で処理することに全振りしてよい。", "en": "Leave 'where we are heading' to others. Allocate all your stats to processing immediate tasks at top speed." },
-      "affinity": {
-        "best_partner": "HLLL",
-        "partner_title": { "ja": "呪縛の預言者", "en": "The Bound Prophet" },
-        "reason": { "ja": "方向音痴なあなたに、彼らが苦悩の果てに見出した「絶対に間違いない羅針盤」を授ける。", "en": "To your lack of direction, they hand over the 'infallible compass' found at the end of their agony." }
-      }
-    },
-    "LHHL": {
-      "title": { "ja": "虚無の執行人", "en": "The Void Executioner" },
-      "profile": { "ja": "目的も希望もないが、与えられた任務だけは完璧かつ冷徹に遂行する仕事人。裏切らないが、熱狂もない。", "en": "No purpose or hope, but executes assigned tasks perfectly and coldly. A professional who never betrays, nor enthuses." },
-      "action_plan": { "ja": "無理にモチベーションを探す必要はない。「プロとしての美学」だけを基準にコードや業務を洗練させよ。", "en": "No need to force motivation. Refine your code and work based solely on 'professional aesthetics'." },
-      "affinity": {
-        "best_partner": "HLLH",
-        "partner_title": { "ja": "空想の観測手", "en": "The Daydreaming Observer" },
-        "reason": { "ja": "あなたに欠けている「意味不明な情熱とビジョン」を彼らが提供し、あなたのスキルを最大化する。", "en": "They provide the 'incomprehensible passion and vision' you lack, maximizing your skills." }
-      }
-    },
-    "LHLH": {
-      "title": { "ja": "享楽の奇術師", "en": "The Hedonistic Illusionist" },
-      "profile": { "ja": "タフネスも目標もないが、己の腕への自信とノリだけでピンチを切り抜ける天才肌のギャンブラー。", "en": "Lacks toughness and goals, but survives pinches purely on confidence in their skills and the vibe. A genius gambler." },
-      "action_plan": { "ja": "長期戦は死を意味する。短期決戦、あるいは即効性のあるプロトタイプ開発で一撃離脱を狙え。", "en": "Long battles mean death. Aim for hit-and-run tactics in short decisive battles or rapid prototype development." },
-      "affinity": {
-        "best_partner": "HLHL",
-        "partner_title": { "ja": "孤独な求道者", "en": "The Solitary Seeker" },
-        "reason": { "ja": "あなたが飽きて放り投げたプロジェクトを、彼らが血を吐きながら最後まで完遂してくれる。", "en": "The projects you get bored of and toss aside, they will complete to the very end while spitting blood." }
-      }
-    },
-    "LHLL": {
-      "title": { "ja": "孤高の狙撃手", "en": "The Lone Sniper" },
-      "profile": { "ja": "全てを斜に構え、自分の腕しか信じない。一撃必殺の成果を出すが、持久戦やチーム戦を極端に嫌う。", "en": "Cynical about everything, trusting only their own aim. Delivers one-hit-kill results but extremely hates endurance or team battles." },
-      "action_plan": { "ja": "組織に属するなら、自身のスキルを「切り売り」する特務部隊としてのポジションを早期に確立せよ。", "en": "If in an organization, quickly establish a position as a special ops unit that 'sells' specific skills piece by piece." },
-      "affinity": {
-        "best_partner": "HLHH",
-        "partner_title": { "ja": "傷だらけの志士", "en": "The Scarred Patriot" },
-        "reason": { "ja": "あなたが隠れるための囮として、彼らが前線で泥だらけになりながら立ち回ってくれる。", "en": "They act as your decoy, maneuvering in the muddy frontlines so you can stay hidden." }
-      }
-    },
-    "LLHH": {
-      "title": { "ja": "泥濘の生存者", "en": "Survivor in the Mud" },
-      "profile": { "ja": "自信も目標もないが、理不尽に耐え抜く圧倒的なタフネスと楽観性を持つ。どんなブラック環境でも生き残る究極のサバイバー。", "en": "No confidence or goals, but endures unreasonableness with overwhelming toughness and optimism. The ultimate survivor in any toxic environment." },
-      "action_plan": { "ja": "根拠のない自信は不要。目の前の小さなタスクをこなし、生き延びたという事実だけを誇りに思え。", "en": "Groundless confidence is unnecessary. Clear the small tasks in front of you and take pride simply in having survived." },
-      "affinity": {
-        "best_partner": "HHLL",
-        "partner_title": { "ja": "薄氷の設計者", "en": "The Thin-Ice Architect" },
-        "reason": { "ja": "彼らが描く完璧なビジョンが頓挫した時、あなたの異常な再起力が窮地を救う。最高の補完関係。", "en": "When their perfect vision derails, your abnormal resilience saves the day. The greatest complementary relationship." }
-      }
-    },
-    "LLHL": {
-      "title": { "ja": "忘却の重装兵", "en": "The Oblivion Vanguard" },
-      "profile": { "ja": "希望も自信も楽観性もない。ただひたすらダメージに耐え続けることができる、精神的サンドバッグにして最強の盾。", "en": "No hope, confidence, or optimism. A mental punching bag and ultimate shield that can simply endure endless damage." },
-      "action_plan": { "ja": "防御力は最強だが、攻撃力がない。自分を利用するだけの環境からは、静かに、しかし確実に離脱せよ。", "en": "Defense is maxed, but offense is zero. Silently but surely evacuate from environments that only use you." },
-      "affinity": {
-        "best_partner": "HHLH",
-        "partner_title": { "ja": "ガラスの英雄", "en": "The Fragile Hero" },
-        "reason": { "ja": "あなたが耐えている間に、彼らが華麗な一撃で戦局をひっくり返してくれる。", "en": "While you endure, they flip the tide of battle with a brilliant strike." }
-      }
-    },
-    "LLLH": {
-      "title": { "ja": "陽だまりの隠者", "en": "The Sunlit Hermit" },
-      "profile": { "ja": "弱く、目標もないが、なぜか常にポジティブ。競争社会から降りており、チームの空気を和ませる精神的オアシス。", "en": "Weak and goalless, yet inexplicably positive. Stepped off the competitive ladder, serving as the team's mental oasis." },
-      "action_plan": { "ja": "戦う必要はない。あなたの「そこにいるだけで空気が緩む」という天性の才能は、高度な潤滑油として機能する。", "en": "No need to fight. Your innate talent of 'relaxing the room just by being there' acts as high-grade lubricant." },
-      "affinity": {
-        "best_partner": "HHHL",
-        "partner_title": { "ja": "漆黒の戦術家", "en": "The Obsidian Tactician" },
-        "reason": { "ja": "常に気を張っている彼らにとって、あなたの存在そのものが唯一の休息所となる。", "en": "For them who are always tense, your very existence becomes their sole resting place." }
-      }
-    },
-    "LLLL": {
-      "title": { "ja": "絶望の淵の監視者", "en": "Watcher of the Abyss" },
-      "profile": { "ja": "全てのステータスが枯渇している。しかし「最悪の事態」を誰よりも早く察知し、警鐘を鳴らせる究極のリスクセンサー。", "en": "All parameters depleted. Yet, the ultimate risk sensor capable of detecting 'the worst-case scenario' faster than anyone." },
-      "action_plan": { "ja": "無理に前を向くな。あなたの「不安」は危機管理能力の裏返し。システムへのバグ出し（デバッグ）に専念せよ。", "en": "Don't force yourself to look forward. Your 'anxiety' is risk management. Dedicate yourself to finding bugs in the system." },
-      "affinity": {
-        "best_partner": "HHHH",
-        "partner_title": { "ja": "不動の修験者", "en": "The Immovable Ascetic" },
-        "reason": { "ja": "あなたが恐れる「最悪の事態」すら、彼らは一切動じることなく物理と精神の力で踏み潰してくれる。", "en": "Even the 'worst-case scenario' you fear, they will trample with physical and mental might, completely unfazed." }
-      }
-    }
-  }
+ // ==========================================
+// 1. 状態管理（State）
+// ==========================================
+const appState = {
+    lang: 'ja',
+    screen: 'home', 
+    tier: 1,
+    questions: [],
+    currentIdx: 0,
+    answers: {},
+    history: JSON.parse(localStorage.getItem('hero_history')) || [],
+    affinityA: Object.keys(heroData.types)[0],
+    affinityB: Object.keys(heroData.types)[0],
+    affinityResult: null,
+    shareText: ""
+};
+
+// ==========================================
+// 2. 状態更新エンジン
+// ==========================================
+function setState(updates) {
+    Object.assign(appState, updates);
+    render();
 }
-    // =========================================================================
 
-    let currentLang = 'ja', currentQuestions = [], currentIdx = 0, answers = {}, currentTier = 1;
-    let shareText = "";
-
-    document.getElementById('lang-toggle').addEventListener('click', () => {
-        currentLang = currentLang === 'ja' ? 'en' : 'ja';
-        renderHomeUI();
-        if(!document.getElementById('screen-quiz').classList.contains('hidden')) renderQuestion();
-        if(!document.getElementById('screen-help').classList.contains('hidden')) showHelp();
+// ==========================================
+// 3. メインレンダラー
+// ==========================================
+function render() {
+    ['home', 'quiz', 'result', 'help'].forEach(screen => {
+        document.getElementById(`screen-${screen}`).classList.toggle('hidden', appState.screen !== screen);
     });
 
-    function renderHomeUI() {
-        document.getElementById('ui-desc').innerText = currentLang === 'ja' ? "心理的資本(HERO)に基づくステータス診断" : "Resilience Assessment based on HERO";
-        document.getElementById('btn-tier1').innerText = currentLang === 'ja' ? "軽く (Tier 1)" : "Light Mode (12 questions)";
-        document.getElementById('btn-tier2').innerText = currentLang === 'ja' ? "普通に (Tier 2)" : "Normal Mode (28 questions)";
-        document.getElementById('btn-tier3').innerText = currentLang === 'ja' ? "深く (Tier 3)" : "Deep Mode (48 questions)";
-        document.getElementById('ui-quick-affinity-title').innerText = currentLang === 'ja' ? "簡易相性チェック" : "Quick Affinity Check";
-        document.getElementById('ui-quick-affinity-desc').innerText = currentLang === 'ja' ? "2つのタイプを選んで相性をシミュレーション" : "Select two types to simulate affinity";
-        document.getElementById('btn-check-affinity').innerText = currentLang === 'ja' ? "相性を見る" : "Check Affinity";
-        document.getElementById('ui-history-title').innerText = currentLang === 'ja' ? "診断履歴" : "History";
-        document.getElementById('btn-clear-history').innerText = currentLang === 'ja' ? "履歴を削除" : "Clear History";
-        document.getElementById('btn-home').innerText = currentLang === 'ja' ? "ホームに戻る" : "Back to Home";
-
-        populateAffinityDropdowns();
-        document.getElementById('quick-affinity-result').classList.add('hidden');
-        loadHistory();
-
-        if(document.getElementById('btn-share-x')) document.getElementById('btn-share-x').innerText = currentLang === 'ja' ? "𝕏 で結果をシェア" : "Share result on 𝕏";
+    document.getElementById('btn-help').innerText = appState.lang === 'ja' ? "[ ? ] HELP" : "[ ? ] HELP";
+    
+    switch (appState.screen) {
+        case 'home':   renderHome();   break;
+        case 'quiz':   renderQuiz();   break;
+        case 'result': renderResult(); break;
+        case 'help':   renderHelp();   break;
     }
+}
 
-    function populateAffinityDropdowns() {
-        const selectA = document.getElementById('affinity-type-a'), selectB = document.getElementById('affinity-type-b');
-        if (selectA.options.length > 0) {
-            for (let i = 0; i < selectA.options.length; i++) {
-                const key = selectA.options[i].value;
-                selectA.options[i].text = `[${key}] ${heroData.types[key].title[currentLang]}`;
-                selectB.options[i].text = `[${key}] ${heroData.types[key].title[currentLang]}`;
-            }
-            return;
-        }
+// ==========================================
+// 4. 個別レンダリング関数
+// ==========================================
+function renderHome() {
+    const isJa = appState.lang === 'ja';
+    document.getElementById('ui-desc').innerText = isJa ? "心理的資本(HERO)に基づくステータス診断" : "Resilience Assessment based on HERO";
+    document.getElementById('btn-tier1').innerText = isJa ? "軽く (12問)" : "Light (12 Qs)";
+    document.getElementById('btn-tier2').innerText = isJa ? "普通に (28問)" : "Normal (28 Qs)";
+    document.getElementById('btn-tier3').innerText = isJa ? "深く (48問)" : "Deep (48 Qs)";
+    document.getElementById('ui-quick-affinity-title').innerText = isJa ? "簡易相性チェック" : "Quick Affinity Check";
+    document.getElementById('ui-quick-affinity-desc').innerText = isJa ? "2つのタイプを選んで相性をシミュレーション" : "Select two types to simulate affinity";
+    document.getElementById('btn-check-affinity').innerText = isJa ? "相性を見る" : "Check Affinity";
+    document.getElementById('ui-history-title').innerText = isJa ? "診断履歴" : "History";
+    document.getElementById('btn-clear-history').innerText = isJa ? "履歴を削除" : "Clear History";
+
+    renderAffinityDropdowns();
+    renderQuickAffinityResult();
+    renderHistory();
+}
+
+function renderAffinityDropdowns() {
+    const selectA = document.getElementById('affinity-type-a');
+    const selectB = document.getElementById('affinity-type-b');
+    
+    if (selectA.options.length === 0) {
         for (const [key, data] of Object.entries(heroData.types)) {
-            const text = `[${key}] ${data.title[currentLang]}`;
-            selectA.add(new Option(text, key)); selectB.add(new Option(text, key));
+            selectA.add(new Option(`[${key}] ${data.title[appState.lang]}`, key));
+            selectB.add(new Option(`[${key}] ${data.title[appState.lang]}`, key));
+        }
+        selectA.addEventListener('change', (e) => setState({ affinityA: e.target.value, affinityResult: null }));
+        selectB.addEventListener('change', (e) => setState({ affinityB: e.target.value, affinityResult: null }));
+    } else {
+        for (let i = 0; i < selectA.options.length; i++) {
+            const key = selectA.options[i].value;
+            const text = `[${key}] ${heroData.types[key].title[appState.lang]}`;
+            selectA.options[i].text = text;
+            selectB.options[i].text = text;
         }
     }
+    selectA.value = appState.affinityA;
+    selectB.value = appState.affinityB;
+}
 
-    function startQuiz(tier) {
-        currentTier = tier; currentQuestions = heroData.questions.filter(q => q.tier <= tier); currentIdx = 0; answers = {};
-        document.getElementById('screen-home').classList.add('hidden'); document.getElementById('screen-quiz').classList.remove('hidden');
-        renderQuestion();
+function renderQuickAffinityResult() {
+    const resultDiv = document.getElementById('quick-affinity-result');
+    if (appState.affinityResult) {
+        resultDiv.classList.remove('hidden');
+        document.getElementById('quick-result-relation').innerText = appState.affinityResult.relation;
+        document.getElementById('quick-result-score').innerText = `${appState.affinityResult.score}%`;
+        // 追加実装：詳細な解説テキストの描画
+        document.getElementById('quick-result-desc').innerText = appState.affinityResult.desc;
+    } else {
+        resultDiv.classList.add('hidden');
     }
+}
 
-    function renderQuestion() {
-        const q = currentQuestions[currentIdx];
-        document.getElementById('quiz-progress').innerText = `Q. ${currentIdx + 1} / ${currentQuestions.length}`;
-        document.getElementById('question-text').innerText = q.text[currentLang];
-        const optionsContainer = document.getElementById('quiz-options'); optionsContainer.innerHTML = '';
-        heroData.app_config.scale.forEach(scale => {
-            const btn = document.createElement('button'); btn.className = 'option-btn';
-            if(answers[q.id] === scale.value) btn.classList.add('selected');
-            btn.innerText = scale.label[currentLang];
-            btn.onclick = () => { answers[q.id] = scale.value; renderQuestion(); };
-            optionsContainer.appendChild(btn);
-        });
-        document.getElementById('btn-prev').disabled = currentIdx === 0;
-        document.getElementById('btn-next').innerText = currentIdx === currentQuestions.length - 1 ? (currentLang === 'ja' ? "結果を見る" : "See Result") : (currentLang === 'ja' ? "次へ" : "Next");
-    }
-
-    function prevQuestion() { if(currentIdx > 0) { currentIdx--; renderQuestion(); } }
-    function nextQuestion() {
-        if(!answers[currentQuestions[currentIdx].id]) return alert(currentLang === 'ja' ? '回答を選択してください' : 'Please select an option');
-        if(currentIdx < currentQuestions.length - 1) { currentIdx++; renderQuestion(); } else { calculateResult(); }
-    }
-
-    function calculateResult() {
-        let scores = { H: 0, E: 0, R: 0, O: 0 }, counts = { H: 0, E: 0, R: 0, O: 0 };
-        currentQuestions.forEach(q => { let val = answers[q.id]; if(q.is_reversed) val = 6 - val; scores[q.category] += val; counts[q.category] += 1; });
-        let typeStr = "", percentages = {};
-        ['H', 'E', 'R', 'O'].forEach(cat => { let avg = scores[cat] / counts[cat]; typeStr += avg >= 3.0 ? "H" : "L"; percentages[cat] = ((avg - 1) / 4) * 100; });
-        const resultData = heroData.types[typeStr] || heroData.types[Object.keys(heroData.types)[0]];
-        showResult(typeStr, resultData, percentages); saveHistory(typeStr, resultData.title[currentLang]);
-    }
-
-    function calculateAffinityDetails(typeA, typeB) {
-        let diff = 0; for (let i = 0; i < 4; i++) { if (typeA[i] !== typeB[i]) diff++; }
-        switch(diff) {
-            case 4: return { score: 120, relation: currentLang === 'ja' ? "究極の補完者" : "Ultimate Complement" };
-            case 1: return { score: 90,  relation: currentLang === 'ja' ? "最良の戦友" : "Best Comrade" };
-            case 0: return { score: 80,  relation: currentLang === 'ja' ? "鏡面の同志" : "Mirror Comrade" };
-            case 2: return { score: 60,  relation: currentLang === 'ja' ? "平行線の協力者" : "Parallel Collaborator" };
-            case 3: return { score: 40,  relation: currentLang === 'ja' ? "異端の摩擦者" : "Unorthodox Friction" };
-        }
-    }
-
-    function showResult(typeKey, data, percentages) {
-        document.getElementById('screen-quiz').classList.add('hidden'); document.getElementById('screen-result').classList.remove('hidden');
-        document.getElementById('result-type').innerText = `[ ${typeKey} ]`; document.getElementById('result-title').innerText = data.title[currentLang];
-        document.getElementById('result-profile').innerText = data.profile[currentLang]; document.getElementById('result-action').innerText = data.action_plan[currentLang];
-        document.getElementById('ui-action-plan').innerText = currentLang === 'ja' ? "【行動指針】" : "[ Action Plan ]";
-        document.getElementById('ui-affinity').innerText = currentLang === 'ja' ? "【全16タイプ 相性マトリックス】" : "[ 16-Type Affinity Matrix ]";
-        
-        const titleStr = data.title[currentLang];
-        shareText = currentLang === 'ja' 
-            ? `私のステータスは [ ${typeKey} ] ${titleStr} でした！\n\n`
-            : `My HERO status is [ ${typeKey} ] ${titleStr}!\n\n`;
-        
-        document.getElementById('screen-result').classList.remove('hidden');
-
-        const imgContainer = document.querySelector('#screen-result div[style*="text-align: center"]');
-        imgContainer.innerHTML = `<img src="assets/icons/${typeKey}.png" alt="${typeKey}" style="width:100px; height:100px; image-rendering: pixelated;">`;
-
-        ['h', 'e', 'r', 'o'].forEach(cat => { document.getElementById(`bar-${cat}`).style.width = `${percentages[cat.toUpperCase()]}%`; });
-        const affinityListDiv = document.getElementById('affinity-list'); affinityListDiv.innerHTML = '';
-        let affinityResults = [];
-        for (const [targetType, targetData] of Object.entries(heroData.types)) {
-            const affData = calculateAffinityDetails(typeKey, targetType);
-            affinityResults.push({ type: targetType, title: targetData.title[currentLang], score: affData.score, relation: affData.relation });
-        }
-        affinityResults.sort((a, b) => b.score - a.score).forEach(item => {
-            const div = document.createElement('div'); div.className = 'affinity-item';
-            div.innerHTML = `<div class="affinity-type">[${item.type}]</div><div class="affinity-title">${item.title}</div><div class="affinity-score-box"><span class="affinity-relation">${item.relation}</span><strong>${item.score}%</strong></div>`;
-            affinityListDiv.appendChild(div);
-        });
-    }
-
-    function checkQuickAffinity() {
-        const typeA = document.getElementById('affinity-type-a').value, typeB = document.getElementById('affinity-type-b').value;
-        const resultData = calculateAffinityDetails(typeA, typeB);
-        document.getElementById('quick-result-relation').innerText = resultData.relation; document.getElementById('quick-result-score').innerText = `${resultData.score}%`;
-        document.getElementById('quick-affinity-result').classList.remove('hidden');
-    }
-
-    function goHome() { document.getElementById('screen-result').classList.add('hidden'); document.getElementById('screen-home').classList.remove('hidden'); renderHomeUI(); }
-
-    function showHelp() {
-        document.querySelectorAll('#app-container > div:not(.header-controls)').forEach(div => div.classList.add('hidden'));
-        document.getElementById('screen-help').classList.remove('hidden');
-        document.getElementById('ui-help-title').innerText = currentLang === 'ja' ? "16タイプ図鑑" : "16 Types Encyclopedia";
-        document.getElementById('ui-help-desc').innerText = currentLang === 'ja' ? "心理的資本(HERO)の組み合わせによる全クラス一覧" : "All classes based on HERO combinations";
-        document.getElementById('btn-close-help').innerText = currentLang === 'ja' ? "閉じる" : "Close";
-        const helpList = document.getElementById('help-list'); helpList.innerHTML = '';
-        for (const [key, data] of Object.entries(heroData.types)) {
-            const div = document.createElement('div'); div.style.borderBottom = "1px dashed #555"; div.style.paddingBottom = "15px"; div.style.marginBottom = "15px";
-            div.innerHTML = `<div style="color: var(--accent-color); font-size: 16px; font-weight: bold; margin-bottom: 5px;">[${key}] ${data.title[currentLang]}</div><div style="font-size: 13px; line-height: 1.5; color: #ccc;">${data.profile[currentLang]}</div>`;
-            helpList.appendChild(div);
-        }
-    }
-
-    function closeHelp() { document.getElementById('screen-help').classList.add('hidden'); document.getElementById('screen-home').classList.remove('hidden'); renderHomeUI(); }
-
-    function saveHistory(typeKey, title) {
-        let history = JSON.parse(localStorage.getItem('hero_history')) || []; const date = new Date();
-        const dateStr = `${date.getFullYear()}/${date.getMonth()+1}/${date.getDate()} ${date.getHours()}:${String(date.getMinutes()).padStart(2,'0')}`;
-        history.unshift({ date: dateStr, type: typeKey, title: title, tier: currentTier }); localStorage.setItem('hero_history', JSON.stringify(history));
-    }
-
-    function loadHistory() {
-        const historyList = document.getElementById('history-list'), clearBtn = document.getElementById('btn-clear-history');
-        let history = JSON.parse(localStorage.getItem('hero_history')) || []; historyList.innerHTML = '';
-        if(history.length === 0) { historyList.innerHTML = `<p style="color:#555; font-size:14px;">${currentLang === 'ja' ? '履歴はありません' : 'No history yet'}</p>`; clearBtn.classList.add('hidden'); return; }
-        clearBtn.classList.remove('hidden');
-        history.forEach(item => { const div = document.createElement('div'); div.className = 'history-item'; div.innerText = `[${item.date}] Tier${item.tier} : [${item.type}] ${item.title}`; historyList.appendChild(div); });
-    }
-
-    function clearHistory() { if(confirm(currentLang === 'ja' ? '本当に履歴を削除しますか？' : 'Are you sure to clear history?')) { localStorage.removeItem('hero_history'); loadHistory(); } }
-
-    // ▼ 𝕏でシェアする関数 ▼
-    function shareOnX() {
-        const url = "https://wearehero.vercel.app/";
-        const hashtags = "WEAREHERO,心理的資本";
-        const text = encodeURIComponent(shareText); // URLに入れられるように文字を変換
-        const intentUrl = `https://twitter.com/intent/tweet?text=${text}&url=${encodeURIComponent(url)}&hashtags=${hashtags}`;
-        window.open(intentUrl, '_blank', 'noopener,noreferrer');
+function renderHistory() {
+    const historyList = document.getElementById('history-list');
+    const clearBtn = document.getElementById('btn-clear-history');
+    historyList.innerHTML = '';
+    
+    if (appState.history.length === 0) {
+        historyList.innerHTML = `<p style="color:#555; font-size:14px;">${appState.lang === 'ja' ? '履歴はありません' : 'No history yet'}</p>`;
+        clearBtn.classList.add('hidden');
+        return;
     }
     
-    renderHomeUI();
+    clearBtn.classList.remove('hidden');
+    appState.history.forEach((item, index) => {
+        const div = document.createElement('div');
+        div.className = 'history-item';
+        // 追加実装：履歴クリック時に結果画面を復元する
+        div.style.cursor = 'pointer';
+        div.onclick = () => loadResultFromHistory(index);
+        
+        const titleStr = heroData.types[item.type] ? heroData.types[item.type].title[appState.lang] : item.title;
+        div.innerHTML = `
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+                <span>[${item.date}] Tier${item.tier} : [${item.type}] ${titleStr}</span>
+                <span style="color:var(--accent-color); font-size:12px; border:1px solid var(--accent-color); padding:2px 5px;">詳細を見る</span>
+            </div>
+        `;
+        historyList.appendChild(div);
+    });
+}
 
-    if ('serviceWorker' in navigator) { window.addEventListener('load', () => { navigator.serviceWorker.register('./service-worker.js').catch(err => console.log('SW error: ', err)); }); }
+function renderQuiz() {
+    const q = appState.questions[appState.currentIdx];
+    if (!q) return;
+
+    document.getElementById('quiz-progress').innerText = `Q. ${appState.currentIdx + 1} / ${appState.questions.length}`;
+    document.getElementById('question-text').innerText = q.text[appState.lang];
+    
+    const optionsContainer = document.getElementById('quiz-options');
+    optionsContainer.innerHTML = '';
+    
+    heroData.app_config.scale.forEach(scale => {
+        const btn = document.createElement('button');
+        btn.className = 'option-btn';
+        if (appState.answers[q.id] === scale.value) btn.classList.add('selected');
+        btn.innerText = scale.label[appState.lang];
+        btn.onclick = () => handleAnswer(q.id, scale.value);
+        optionsContainer.appendChild(btn);
+    });
+
+    const isJa = appState.lang === 'ja';
+    document.getElementById('btn-prev').disabled = appState.currentIdx === 0;
+    document.getElementById('btn-prev').innerText = isJa ? "戻る" : "Back";
+    document.getElementById('btn-next').innerText = appState.currentIdx === appState.questions.length - 1 
+        ? (isJa ? "結果を見る" : "See Result") 
+        : (isJa ? "次へ" : "Next");
+}
+
+function renderResult() {
+    const isJa = appState.lang === 'ja';
+    document.getElementById('ui-action-plan').innerText = isJa ? "【行動指針】" : "[ Action Plan ]";
+    document.getElementById('ui-affinity').innerText = isJa ? "【全16タイプ 相性マトリックス】" : "[ 16-Type Affinity Matrix ]";
+    if(document.getElementById('btn-share-x')) document.getElementById('btn-share-x').innerText = isJa ? "𝕏 で結果をシェア" : "Share on 𝕏";
+    document.getElementById('btn-home').innerText = isJa ? "ホームに戻る" : "Back to Home";
+}
+
+function renderHelp() {
+    const isJa = appState.lang === 'ja';
+    document.getElementById('ui-help-title').innerText = isJa ? "16タイプ図鑑" : "16 Types Encyclopedia";
+    document.getElementById('ui-help-desc').innerText = isJa ? "心理的資本(HERO)の組み合わせによる全クラス一覧" : "All classes based on HERO combinations";
+    document.getElementById('btn-close-help').innerText = isJa ? "閉じる" : "Close";
+    
+    const helpList = document.getElementById('help-list');
+    helpList.innerHTML = '';
+
+    // ==========================================
+    // 追加実装：PWAインストールの案内ブロック
+    // ==========================================
+    const pwaDiv = document.createElement('div');
+    pwaDiv.style.borderBottom = "2px solid var(--accent-color)"; // 図鑑との区切りを明確にするため実線を使用
+    pwaDiv.style.paddingBottom = "15px";
+    pwaDiv.style.marginBottom = "20px";
+    pwaDiv.innerHTML = `
+        <div style="color: var(--accent-color); font-size: 16px; font-weight: bold; margin-bottom: 8px;">
+            ${isJa ? "[ App Install ] アプリのインストールについて" : "[ App Install ] About PWA Installation"}
+        </div>
+        <div style="font-size: 13px; line-height: 1.6; color: #eee;">
+            ${isJa
+                ? "当アプリはPWA（プログレッシブ・ウェブ・アプリ）に対応しています。<br>スマートフォンのブラウザメニューから「ホーム画面に追加」を選択するか、PCブラウザのアドレスバー右側から「インストール」を行うことで、ネイティブアプリのように全画面で快適にご利用いただけます。<br><span style='color:#aaa; font-size:11px;'>※オフライン環境での動作や、キャッシュによる高速起動にも対応しています。</span>"
+                : "This application supports PWA (Progressive Web App).<br>By selecting 'Add to Home Screen' from your mobile browser menu, or clicking 'Install' in your PC browser's address bar, you can use it in full-screen mode like a native app.<br><span style='color:#aaa; font-size:11px;'>* It also features offline support and fast loading via cache.</span>"
+            }
+        </div>
+    `;
+    helpList.appendChild(pwaDiv);
+    // ==========================================
+
+    // 既存の16タイプ図鑑の生成ループ
+    for (const [key, data] of Object.entries(heroData.types)) {
+        const div = document.createElement('div');
+        div.style.borderBottom = "1px dashed #555"; div.style.paddingBottom = "15px"; div.style.marginBottom = "15px";
+        div.innerHTML = `<div style="color: var(--accent-color); font-size: 16px; font-weight: bold; margin-bottom: 5px;">[${key}] ${data.title[appState.lang]}</div>
+                         <div style="font-size: 13px; line-height: 1.5; color: #ccc;">${data.profile[appState.lang]}</div>`;
+        helpList.appendChild(div);
+    }
+}
+
+// ==========================================
+// 5. アクションハンドラ（ロジック）
+// ==========================================
+document.getElementById('lang-toggle').addEventListener('click', () => {
+    setState({ lang: appState.lang === 'ja' ? 'en' : 'ja' });
+});
+
+function showHelp() { setState({ screen: 'help' }); }
+function closeHelp() { setState({ screen: 'home' }); }
+function goHome() { setState({ screen: 'home', affinityResult: null }); }
+
+// 追加実装：診断の中断
+function abortQuiz() {
+    if(confirm(appState.lang === 'ja' ? '診断を中止してホームに戻りますか？' : 'Abort the assessment and return to Home?')) {
+        setState({ screen: 'home' });
+    }
+}
+
+function startQuiz(tier) {
+    setState({
+        screen: 'quiz',
+        tier: tier,
+        questions: heroData.questions.filter(q => q.tier <= tier),
+        currentIdx: 0,
+        answers: {}
+    });
+}
+
+function handleAnswer(qId, value) {
+    const newAnswers = { ...appState.answers, [qId]: value };
+    setState({ answers: newAnswers });
+}
+
+function prevQuestion() {
+    if (appState.currentIdx > 0) setState({ currentIdx: appState.currentIdx - 1 });
+}
+
+function nextQuestion() {
+    const qId = appState.questions[appState.currentIdx].id;
+    if (!appState.answers[qId]) {
+        alert(appState.lang === 'ja' ? '回答を選択してください' : 'Please select an option');
+        return;
+    }
+    if (appState.currentIdx < appState.questions.length - 1) {
+        setState({ currentIdx: appState.currentIdx + 1 });
+    } else {
+        calculateAndSaveResult();
+    }
+}
+
+// 新規分離：結果の計算と保存を専任する関数
+function calculateAndSaveResult() {
+    let scores = { H: 0, E: 0, R: 0, O: 0 }, counts = { H: 0, E: 0, R: 0, O: 0 };
+    appState.questions.forEach(q => {
+        let val = appState.answers[q.id];
+        if (q.is_reversed) val = 6 - val;
+        scores[q.category] += val;
+        counts[q.category] += 1;
+    });
+
+    let typeStr = "", percentages = {};
+    ['H', 'E', 'R', 'O'].forEach(cat => {
+        let avg = scores[cat] / counts[cat];
+        typeStr += avg >= 3.0 ? "H" : "L";
+        percentages[cat] = ((avg - 1) / 4) * 100;
+    });
+
+    const resultData = heroData.types[typeStr] || heroData.types[Object.keys(heroData.types)[0]];
+    const titleStr = resultData.title[appState.lang];
+    
+    // 追加実装：パーセンテージデータも履歴に保存する
+    const date = new Date();
+    const dateStr = `${date.getFullYear()}/${date.getMonth()+1}/${date.getDate()} ${date.getHours()}:${String(date.getMinutes()).padStart(2,'0')}`;
+    const newHistory = [{ date: dateStr, type: typeStr, title: titleStr, tier: appState.tier, percentages: percentages }, ...appState.history];
+    localStorage.setItem('hero_history', JSON.stringify(newHistory));
+    
+    setState({ history: newHistory });
+
+    displayResultScreen(typeStr, percentages);
+}
+
+// 新規追加：履歴クリックから呼び出される復元用関数
+function loadResultFromHistory(index) {
+    const item = appState.history[index];
+    
+    // 古い仕様の履歴（パーセンテージデータがない場合）への安全策
+    let percs = item.percentages;
+    if (!percs) {
+        percs = {
+            H: item.type[0] === 'H' ? 80 : 20,
+            E: item.type[1] === 'H' ? 80 : 20,
+            R: item.type[2] === 'H' ? 80 : 20,
+            O: item.type[3] === 'H' ? 80 : 20
+        };
+    }
+    
+    displayResultScreen(item.type, percs);
+}
+
+// 新規分離：画面に結果を描画することだけを専任する関数
+function displayResultScreen(typeStr, percentages) {
+    const resultData = heroData.types[typeStr] || heroData.types[Object.keys(heroData.types)[0]];
+    const titleStr = resultData.title[appState.lang];
+    
+    const text = appState.lang === 'ja' 
+        ? `私のステータスは [ ${typeStr} ] ${titleStr} でした！\n\n`
+        : `My HERO status is [ ${typeStr} ] ${titleStr}!\n\n`;
+
+    document.getElementById('result-type').innerText = `[ ${typeStr} ]`;
+    document.getElementById('result-title').innerText = titleStr;
+    document.getElementById('result-profile').innerText = resultData.profile[appState.lang];
+    document.getElementById('result-action').innerText = resultData.action_plan[appState.lang];
+    
+    const imgContainer = document.querySelector('#screen-result div[style*="text-align: center"]');
+    imgContainer.innerHTML = `<img src="assets/icons/${typeStr}.png" alt="${typeStr}" style="width:100px; height:100px; image-rendering: pixelated;">`;
+
+    ['h', 'e', 'r', 'o'].forEach(cat => {
+        document.getElementById(`bar-${cat}`).style.width = `${percentages[cat.toUpperCase()]}%`;
+    });
+
+    generateAffinityList(typeStr);
+    setState({ screen: 'result', shareText: text });
+}
+
+function generateAffinityList(baseType) {
+    const affinityListDiv = document.getElementById('affinity-list');
+    affinityListDiv.innerHTML = '';
+    let results = [];
+    
+    for (const [targetType, targetData] of Object.entries(heroData.types)) {
+        const affData = calcLogic(baseType, targetType);
+        results.push({ type: targetType, title: targetData.title[appState.lang], score: affData.score, relation: affData.relation });
+    }
+    
+    results.sort((a, b) => b.score - a.score).forEach(item => {
+        const div = document.createElement('div');
+        div.className = 'affinity-item';
+        div.innerHTML = `<div class="affinity-type">[${item.type}]</div><div class="affinity-title">${item.title}</div>
+                         <div class="affinity-score-box"><span class="affinity-relation">${item.relation}</span><strong>${item.score}%</strong></div>`;
+        affinityListDiv.appendChild(div);
+    });
+}
+
+function checkQuickAffinity() {
+    const resultData = calcLogic(appState.affinityA, appState.affinityB);
+    setState({ affinityResult: resultData });
+}
+
+// 修正：相性ロジックに汎用解説テキスト（desc）を動的に追加
+function calcLogic(typeA, typeB) {
+    let diff = 0;
+    for (let i = 0; i < 4; i++) { if (typeA[i] !== typeB[i]) diff++; }
+    const isJa = appState.lang === 'ja';
+    switch(diff) {
+        case 4: return { 
+            score: 120, 
+            relation: isJa ? "究極の補完者" : "Ultimate Complement",
+            desc: isJa ? "価値観や行動原理が完全に真逆だからこそ、互いの死角を完璧にカバーし合える最強のペアです。反発を乗り越えた時、最大のシナジーを生みます。" : "Completely opposite values allow you to perfectly cover each other's blind spots. Overcoming friction creates the greatest synergy."
+        };
+        case 1: return { 
+            score: 90,  
+            relation: isJa ? "最良の戦友" : "Best Comrade",
+            desc: isJa ? "ベースとなる価値観を共有しつつ、一部の異なる視点が良い刺激となります。阿吽の呼吸でプロジェクトを進められる理想的な関係です。" : "Sharing core values while having slightly different perspectives provides good stimulation. An ideal relationship."
+        };
+        case 0: return { 
+            score: 80,  
+            relation: isJa ? "鏡面の同志" : "Mirror Comrade",
+            desc: isJa ? "自分と同じ思考回路を持つため、共感度は圧倒的です。ただし、同じ弱点を持つため、予期せぬトラブル時には共倒れするリスクに注意が必要です。" : "Having the same thought process means overwhelming empathy. However, beware of mutually collapsing during unexpected troubles due to shared weaknesses."
+        };
+        case 2: return { 
+            score: 60,  
+            relation: isJa ? "平行線の協力者" : "Parallel Collaborator",
+            desc: isJa ? "適度な共通点と相違点を持つ、ビジネスライクな関係。互いの領域を侵さず、役割分担を明確にすることで確実に成果を出せます。" : "A business-like relationship with moderate similarities and differences. Best handled by clarifying roles and not encroaching on each other."
+        };
+        case 3: return { 
+            score: 40,  
+            relation: isJa ? "異端の摩擦者" : "Unorthodox Friction",
+            desc: isJa ? "理解できない行動が多く、ストレスを感じやすい関係。しかし、自分にない発想をもたらす「劇薬」として割り切れば、突破口を開く鍵になります。" : "Often hard to understand and prone to causing stress. However, viewing them as a 'drastic medicine' bringing new ideas can open breakthroughs."
+        };
+    }
+}
+
+function clearHistory() {
+    if(confirm(appState.lang === 'ja' ? '本当に履歴を削除しますか？' : 'Are you sure to clear history?')) {
+        localStorage.removeItem('hero_history');
+        setState({ history: [] });
+    }
+}
+
+function shareOnX() {
+    const url = "https://wearehero.vercel.app/";
+    const hashtags = "WEAREHERO,心理的資本";
+    const intentUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(appState.shareText)}&url=${encodeURIComponent(url)}&hashtags=${hashtags}`;
+    window.open(intentUrl, '_blank', 'noopener,noreferrer');
+}
+
+// ==========================================
+// 6. 起動
+// ==========================================
+render();
+
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./service-worker.js').catch(err => console.log('SW error: ', err));
+    });
+}
 </script>
 </body>
 </html>
